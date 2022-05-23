@@ -1,0 +1,304 @@
+---
+title: "Increment_breseq_stats"
+author: "Lewis Fisher"
+date: "11/04/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r libraries}
+
+# install.packages("scales")
+
+library(ggplot2)
+library(esquisse)
+library(reshape2)
+library(ggpubr)
+library(stringr)
+library(dplyr)
+library(purrr)
+library(RColorBrewer)
+library(ggrepel)
+library(scales)
+
+#esquisse::esquisser()
+
+```
+
+
+```{r data import}
+# working directory
+# w_dir<- "C:\\Users\\lew619\OneDrive - The University of Liverpool\\PhD project - pseudomonas resistance\\Genomics\\increment_increase_evolution\\increment_gd_files"
+# w_dir<- "C:\\Users\\Lewis\\OneDrive - The University of Liverpool\\PhD project - pseudomonas resistance\\Genomics\\increment_increase_evolution\\increment_gd_files"
+w_dir<- "C:\\Users\\Lewis\\OneDrive - The University of Liverpool\\PhD project - pseudomonas resistance\\Genomics\\increment_increase_evolution\\increment_gd_sub_files"
+plot_dir<- "C:\\Users\\Lewis\\OneDrive - The University of Liverpool\\PhD project - pseudomonas resistance\\Bead assay\\Sodium benzoate - Gamma (POE + EDTA Combinatrions)\\Sequencing\\plots"
+
+
+setwd(w_dir)
+list.files()
+data<- read.csv("incremement_count_breseq_sub.csv", header = T, na.strings = c("","NA"))
+# data<- read.csv("incremement_count_breseq.csv", header = T, na.strings = c("","NA"))
+# data[!c("file","CONVERTED.BASES", "CONVERTED.READS", "INPUT.BASES", "INPUT.READS", "MAPPED.BASES", "MAPPED.READS","called_bp","total_bp")]
+data = subset(data, select = -c(file,CONVERTED.BASES, CONVERTED.READS, INPUT.BASES, INPUT.READS, MAPPED.BASES, MAPPED.READS,called_bp,total_bp,total))
+
+
+```
+
+```{r metadata}
+
+data_melt<- melt(data, value.name = "Count",variable.name = "Mutation")
+
+data_melt$sample = str_remove(data_melt$sample, "_breseq")
+data_melt$timepoint = str_extract(data_melt$sample, "(T[0-9]{1,2})")
+data_melt$lineage = str_extract(data_melt$sample, "(EDTA[1-4]{1})|(NAB[1-4]{1})|(NE[1-4]{1})|(TSB[1-4]{1})|(PAO1)")
+data_melt$timepoint_num = str_extract(data_melt$timepoint, "([0-9]{1,2})")
+data_melt$timepoint_num = as.numeric(data_melt$timepoint_num)
+data_melt$lineage_num = str_extract(data_melt$lineage, "([1-4]{1})|([1-4]{1})|([1-4]{1})|([1-4]{1})|(PAO1)")
+data_melt$lineage_num = str_replace(data_melt$lineage_num,"PAO1", "0")
+data_melt$lineage_num = as.numeric(data_melt$lineage_num)
+
+data_melt$evolution_condition = str_extract(data_melt$lineage,"(EDTA)|(NAB)|(NE)|(TSB)|(PAO1)" )
+# data_melt_sorted<- subset(data_melt_sorted, data_melt_sorted$Count!=0)
+
+y.axis.ticks<- seq(0, 200, by = 50)
+
+```
+
+```{r mutations by evo}
+#  mutation of lineages by evolution conditions
+
+EDTA_data<- subset(data_melt, data_melt$evolution_condition == "EDTA")
+EDTA_data$sample<-  factor(EDTA_data$sample, levels=c("EDTA1_T1", "EDTA1_T7", "EDTA1_T14", "EDTA2_T1", "EDTA2_T7", "EDTA2_T14", "EDTA3_T1", "EDTA3_T7", "EDTA3_T14", "EDTA4_T1", "EDTA4_T7", "EDTA4_T14"))
+EDTA1_data<- subset(data_melt, data_melt$lineage == "EDTA1")
+EDTA1_data$sample<- factor(EDTA1_data$sample, levels=c("EDTA1_T1", "EDTA1_T7", "EDTA1_T14"))
+EDTA2_data<- subset(data_melt, data_melt$lineage == "EDTA2")
+EDTA2_data$sample<- factor(EDTA2_data$sample, levels=c("EDTA2_T1", "EDTA2_T7", "EDTA2_T14"))
+EDTA3_data<- subset(data_melt, data_melt$lineage == "EDTA3")
+EDTA3_data$sample<- factor(EDTA3_data$sample, levels=c("EDTA3_T1", "EDTA3_T7", "EDTA3_T14"))
+EDTA4_data<- subset(data_melt, data_melt$lineage == "EDTA4")
+EDTA4_data$sample<- factor(EDTA4_data$sample, levels=c("EDTA4_T1", "EDTA4_T7", "EDTA4_T14"))
+
+#esquisse::esquisser()
+
+# ggplot(EDTA1_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# ggplot(EDTA2_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# ggplot(EDTA3_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# ggplot(EDTA4_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# 
+# ggplot(EDTA_data) +
+#   aes(x = lineage, fill = Mutation, weight = Count) +
+#   geom_bar() +
+#   scale_fill_hue(direction = 1) +
+#   theme_minimal()
+
+EDTA1_plot<- ggbarplot(EDTA1_data, x = "sample", y = "Count", fill = "Mutation", title = "a)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type")+ rremove("xlab") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+EDTA2_plot<- ggbarplot(EDTA2_data, x = "sample", y = "Count", fill = "Mutation", title = "b)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type") + rremove("ylab") + labs(fill = "Mutation Type")+ rremove("xlab") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+EDTA3_plot<- ggbarplot(EDTA3_data, x = "sample", y = "Count", fill = "Mutation", title = "c)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+EDTA4_plot<- ggbarplot(EDTA4_data, x = "sample", y = "Count", fill = "Mutation", title = "d)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type") + rremove("ylab") + labs(fill = "Mutation Type") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+EDTA_Merged<- ggarrange(EDTA1_plot,EDTA2_plot,EDTA3_plot,EDTA4_plot, ncol=2, nrow = 2, common.legend = TRUE, legend="right")
+ggsave("EDTA_lineage_mutations_sub.png", plot = EDTA_Merged, path = plot_dir, scale = 2, width = 4, height = 4.4, units = c("in"))
+
+```
+
+```{r }
+
+NE_data<- subset(data_melt, data_melt$evolution_condition == "NE")
+
+
+
+
+
+NE1_data<- subset(data_melt, data_melt$lineage == "NE1")
+NE1_data$sample<- factor(NE1_data$sample, levels=c("NE1_T1", "NE1_T7", "NE1_T14"))
+NE2_data<- subset(data_melt, data_melt$lineage == "NE2")
+NE2_data$sample<- factor(NE2_data$sample, levels=c("NE2_T1", "NE2_T7", "NE2_T14"))
+NE3_data<- subset(data_melt, data_melt$lineage == "NE3")
+NE3_data$sample<- factor(NE3_data$sample, levels=c("NE3_T1", "NE3_T7", "NE3_T14"))
+NE4_data<- subset(data_melt, data_melt$lineage == "NE4")
+NE4_data$sample<- factor(NE4_data$sample, levels=c("NE4_T1", "NE4_T7", "NE4_T14"))
+
+# 
+# 
+# 
+# ggplot(NE1_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# ggplot(NE2_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# ggplot(NE3_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# ggplot(NE4_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# 
+# ggplot(NE_data) +
+#   aes(x = lineage, fill = Mutation, weight = Count) +
+#   geom_bar() +
+#   scale_fill_hue(direction = 1) +
+#   theme_minimal()
+
+
+NE1_plot<- ggbarplot(NE1_data, x = "sample", y = "Count", fill = "Mutation", title = "a)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type")+ rremove("xlab") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+NE2_plot<- ggbarplot(NE2_data, x = "sample", y = "Count", fill = "Mutation", title = "b)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type") + rremove("ylab") + labs(fill = "Mutation Type")+ rremove("xlab") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+NE3_plot<- ggbarplot(NE3_data, x = "sample", y = "Count", fill = "Mutation", title = "c)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+NE4_plot<- ggbarplot(NE4_data, x = "sample", y = "Count", fill = "Mutation", title = "d)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type") + rremove("ylab") + labs(fill = "Mutation Type") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+
+
+
+NE_Merged<- ggarrange(NE1_plot,NE2_plot,NE3_plot,NE4_plot, ncol=2, nrow = 2, common.legend = TRUE, legend="right")
+ggsave("NE_lineage_mutations_sub.png", plot = NE_Merged, path = plot_dir, scale = 2, width = 4, height = 4.4, units = c("in"))
+
+
+
+```
+
+```{r }
+
+
+TSB_data<- subset(data_melt, data_melt$evolution_condition == "TSB")
+NAB_data<- subset(data_melt, data_melt$evolution_condition == "NAB")
+
+
+TSB1_data<- subset(data_melt, data_melt$lineage == "TSB1")
+TSB1_data$sample<- factor(TSB1_data$sample, levels=c("TSB1_T1", "TSB1_T7", "TSB1_T14"))
+TSB2_data<- subset(data_melt, data_melt$lineage == "TSB2")
+TSB2_data$sample<- factor(TSB2_data$sample, levels=c("TSB2_T1", "TSB2_T7", "TSB2_T14"))
+TSB3_data<- subset(data_melt, data_melt$lineage == "TSB3")
+TSB3_data$sample<- factor(TSB3_data$sample, levels=c("TSB3_T1", "TSB3_T7", "TSB3_T14"))
+TSB4_data<- subset(data_melt, data_melt$lineage == "TSB4")
+TSB4_data$sample<- factor(TSB4_data$sample, levels=c("TSB4_T1", "TSB4_T7", "TSB4_T14"))
+
+
+
+
+# ggplot(TSB1_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# ggplot(TSB2_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# ggplot(TSB3_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# ggplot(TSB4_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# 
+# ggplot(TSB_data) +
+#   aes(x = lineage, fill = Mutation, weight = Count) +
+#   geom_bar() +
+#   scale_fill_hue(direction = 1) +
+#   theme_minimal()
+
+
+
+TSB1_plot<- ggbarplot(TSB1_data, x = "sample", y = "Count", fill = "Mutation", title = "a)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type")+ rremove("xlab") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+TSB2_plot<- ggbarplot(TSB2_data, x = "sample", y = "Count", fill = "Mutation", title = "b)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type") + rremove("ylab") + labs(fill = "Mutation Type")+ rremove("xlab") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+TSB3_plot<- ggbarplot(TSB3_data, x = "sample", y = "Count", fill = "Mutation", title = "c)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+TSB4_plot<- ggbarplot(TSB4_data, x = "sample", y = "Count", fill = "Mutation", title = "d)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type") + rremove("ylab") + labs(fill = "Mutation Type") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+
+TSB_Merged<- ggarrange(TSB1_plot,TSB2_plot,TSB3_plot,TSB4_plot, ncol=2, nrow = 2, common.legend = TRUE, legend="right")
+ggsave("TSB_lineage_mutations_sub.png", plot = TSB_Merged, path = plot_dir, scale = 2, width = 4, height = 4.4, units = c("in"))
+
+```
+
+```{r }
+
+NAB_data<- subset(data_melt, data_melt$evolution_condition == "NAB")
+
+
+NAB1_data<- subset(data_melt, data_melt$lineage == "NAB1")
+NAB1_data$sample<- factor(NAB1_data$sample, levels=c("NAB1_T1", "NAB1_T7", "NAB1_T14"))
+NAB2_data<- subset(data_melt, data_melt$lineage == "NAB2")
+NAB2_data$sample<- factor(NAB2_data$sample, levels=c("NAB2_T1", "NAB2_T7", "NAB2_T14"))
+NAB3_data<- subset(data_melt, data_melt$lineage == "NAB3")
+NAB3_data$sample<- factor(NAB3_data$sample, levels=c("NAB3_T1", "NAB3_T7", "NAB3_T14"))
+NAB4_data<- subset(data_melt, data_melt$lineage == "NAB4")
+NAB4_data$sample<- factor(NAB4_data$sample, levels=c("NAB4_T1", "NAB4_T7", "NAB4_T14"))
+
+
+
+# 
+# ggplot(TSB1_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# ggplot(TSB2_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# ggplot(TSB3_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# ggplot(TSB4_data) +
+#   aes(x = timepoint_num, y = Count, colour = Mutation) +
+#   geom_line(size = 0.5) +
+#   scale_color_hue(direction = 1) +
+#   theme_minimal()
+# 
+# ggplot(TSB_data) +
+#   aes(x = lineage, fill = Mutation, weight = Count) +
+#   geom_bar() +
+#   scale_fill_hue(direction = 1) +
+#   theme_minimal()
+
+
+
+NAB1_plot<- ggbarplot(NAB1_data, x = "sample", y = "Count", fill = "Mutation", title = "a)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type")+ rremove("xlab") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+NAB2_plot<- ggbarplot(NAB2_data, x = "sample", y = "Count", fill = "Mutation", title = "b)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type") + rremove("ylab") + labs(fill = "Mutation Type")+ rremove("xlab") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+NAB3_plot<- ggbarplot(NAB3_data, x = "sample", y = "Count", fill = "Mutation", title = "c)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+NAB4_plot<- ggbarplot(NAB4_data, x = "sample", y = "Count", fill = "Mutation", title = "d)", xlab = "Timepoint", ylab = "Number of Mutations", x.text.angle = 90, legend = "right") + labs(fill = "Mutation Type") + rremove("ylab") + labs(fill = "Mutation Type") + scale_y_continuous(breaks=y.axis.ticks, limits = c(min(y.axis.ticks), max(y.axis.ticks)))
+
+NAB_Merged<- ggarrange(NAB1_plot,NAB2_plot,NAB3_plot,NAB4_plot, ncol=2, nrow = 2, common.legend = TRUE, legend="right")
+ggsave("NAB_lineage_mutations_sub.png", plot = NAB_Merged, path = plot_dir, scale = 2, width = 4, height = 4.4, units = c("in"))
+
+
+```
+
+```{r }
+
+
+
+```
