@@ -1,3 +1,8 @@
+'''
+Title: Merging bed files containing median1000 coverage
+Author: Lewis Fisher
+Date: 01/08/2022
+'''
 
 import pandas as pd
 import os
