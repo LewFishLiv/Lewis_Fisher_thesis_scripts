@@ -15,7 +15,7 @@ work_dir = sys.argv[1]
 
 # output file name
 outfile = sys.argv[2]
-# file extention/ what the files endwith
+# file extention/ what the files endwith e.g. "_median.bed"
 file_ends = sys.argv[3]
 
 os.chdir(work_dir)
